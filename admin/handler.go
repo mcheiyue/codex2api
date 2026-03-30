@@ -1775,7 +1775,13 @@ func (h *Handler) ExportAccounts(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
 	defer cancel()
 
-	rows, err := h.db.ListActive(ctx)
+	var rows []*database.AccountRow
+	var err error
+	if filter == "healthy" {
+		rows, err = h.db.ListActive(ctx)
+	} else {
+		rows, err = h.db.ListAll(ctx)
+	}
 	if err != nil {
 		writeError(c, http.StatusInternalServerError, "查询账号失败: "+err.Error())
 		return
@@ -1812,7 +1818,8 @@ func (h *Handler) ExportAccounts(c *gin.Context) {
 			}
 		}
 		rt := row.GetCredential("refresh_token")
-		if rt == "" {
+		at := row.GetCredential("access_token")
+		if rt == "" && at == "" {
 			continue
 		}
 		entries = append(entries, cpaExportEntry{
@@ -1821,7 +1828,7 @@ func (h *Handler) ExportAccounts(c *gin.Context) {
 			Expired:      row.GetCredential("expires_at"),
 			IDToken:      row.GetCredential("id_token"),
 			AccountID:    row.GetCredential("account_id"),
-			AccessToken:  row.GetCredential("access_token"),
+			AccessToken:  at,
 			LastRefresh:  row.UpdatedAt.Format(time.RFC3339),
 			RefreshToken: rt,
 		})
