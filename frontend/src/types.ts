@@ -21,6 +21,10 @@ export interface AccountRow {
   email: string
   plan_type: string
   status: AccountStatus
+  wait_mode?: boolean
+  wait_reason?: string
+  wait_until?: ISODateString
+  wait_remaining_seconds?: number
   at_only?: boolean
   health_tier?: string
   scheduler_score?: number

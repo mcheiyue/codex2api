@@ -229,6 +229,10 @@ type accountResponse struct {
 	Email              string                     `json:"email"`
 	PlanType           string                     `json:"plan_type"`
 	Status             string                     `json:"status"`
+	WaitMode           bool                       `json:"wait_mode"`
+	WaitReason         string                     `json:"wait_reason,omitempty"`
+	WaitUntil          string                     `json:"wait_until,omitempty"`
+	WaitRemainingSec   int64                      `json:"wait_remaining_seconds,omitempty"`
 	ATOnly             bool                       `json:"at_only"`
 	HealthTier         string                     `json:"health_tier"`
 	SchedulerScore     float64                    `json:"scheduler_score"`
@@ -268,6 +272,7 @@ type schedulerBreakdownResponse struct {
 func (h *Handler) ListAccounts(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
+	now := time.Now()
 
 	h.store.TriggerUsageProbeAsync()
 	h.store.TriggerRecoveryProbeAsync()
@@ -347,6 +352,34 @@ func (h *Handler) ListAccounts(c *gin.Context) {
 			}
 			// 使用运行时状态（优先于 DB 状态）
 			resp.Status = acc.RuntimeStatus()
+			if cooldownUntil, cooldownReason, activeCooldown := acc.GetCooldownSnapshot(); activeCooldown && resp.Status != "unauthorized" {
+				resp.WaitMode = true
+				reason := strings.TrimSpace(cooldownReason)
+				if reason == "" {
+					reason = resp.Status
+				}
+				if reason == "" || reason == "active" || reason == "ready" {
+					reason = "cooldown"
+				}
+				resp.WaitReason = reason
+				resp.WaitUntil = cooldownUntil.Format(time.RFC3339)
+				if cooldownUntil.After(now) {
+					resp.WaitRemainingSec = int64(cooldownUntil.Sub(now).Seconds())
+				}
+			}
+		} else if row.CooldownUntil.Valid && row.CooldownUntil.Time.After(now) && row.CooldownReason != "unauthorized" {
+			// 兜底：账号不在运行时内存池时，使用数据库冷却信息回填等待态
+			resp.WaitMode = true
+			reason := strings.TrimSpace(row.CooldownReason)
+			if reason == "" {
+				reason = "cooldown"
+			}
+			resp.WaitReason = reason
+			resp.WaitUntil = row.CooldownUntil.Time.Format(time.RFC3339)
+			resp.WaitRemainingSec = int64(row.CooldownUntil.Time.Sub(now).Seconds())
+			if resp.Status == "active" || resp.Status == "ready" {
+				resp.Status = reason
+			}
 		}
 		if rc, ok := reqCounts[row.ID]; ok {
 			resp.SuccessRequests = rc.SuccessCount

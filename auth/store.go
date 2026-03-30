@@ -465,6 +465,14 @@ func (a *Account) HasActiveCooldown() bool {
 	return a.Status == StatusCooldown && time.Now().Before(a.CooldownUtil)
 }
 
+// GetCooldownSnapshot 获取冷却快照（时间、原因、是否处于有效冷却）
+func (a *Account) GetCooldownSnapshot() (time.Time, string, bool) {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+	active := a.Status == StatusCooldown && time.Now().Before(a.CooldownUtil)
+	return a.CooldownUtil, a.CooldownReason, active
+}
+
 // IsBanned 检查账号是否处于强隔离状态
 func (a *Account) IsBanned() bool {
 	a.mu.RLock()

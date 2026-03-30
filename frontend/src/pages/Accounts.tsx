@@ -26,7 +26,26 @@ import {
 } from '@/components/ui/table'
 import { Plus, RefreshCw, Trash2, Zap, FlaskConical, Ban, Timer, AlertTriangle, Upload, Download, ArrowDownToLine, KeyRound, ExternalLink, FileText, FileJson, BarChart3, Search, Fingerprint } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import type { TFunction } from 'i18next'
 import AccountUsageModal from '../components/AccountUsageModal'
+
+function formatWaitRemaining(seconds: number, t: TFunction): string {
+  const safeSeconds = Number.isFinite(seconds) ? Math.max(0, Math.floor(seconds)) : 0
+  if (safeSeconds <= 0) {
+    return `0${t('accounts.waitUnitSecond')}`
+  }
+
+  const days = Math.floor(safeSeconds / 86400)
+  const hours = Math.floor((safeSeconds % 86400) / 3600)
+  const minutes = Math.floor((safeSeconds % 3600) / 60)
+  const secs = safeSeconds % 60
+  const parts: string[] = []
+  if (days > 0) parts.push(`${days}${t('accounts.waitUnitDay')}`)
+  if (hours > 0) parts.push(`${hours}${t('accounts.waitUnitHour')}`)
+  if (minutes > 0) parts.push(`${minutes}${t('accounts.waitUnitMinute')}`)
+  if (parts.length === 0) parts.push(`${secs}${t('accounts.waitUnitSecond')}`)
+  return parts.join(' ')
+}
 
 export default function Accounts() {
   const { t } = useTranslation()
@@ -54,6 +73,7 @@ export default function Accounts() {
   const [testingAccount, setTestingAccount] = useState<AccountRow | null>(null)
   const [usageAccount, setUsageAccount] = useState<AccountRow | null>(null)
   const [importing, setImporting] = useState(false)
+  const [nowMs, setNowMs] = useState(() => Date.now())
   const [showImportPicker, setShowImportPicker] = useState(false)
   const [showExportPicker, setShowExportPicker] = useState(false)
   const [exporting, setExporting] = useState(false)
@@ -106,6 +126,11 @@ export default function Accounts() {
 
     return () => window.clearTimeout(timer)
   }, [accounts, reloadSilently])
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNowMs(Date.now()), 1000)
+    return () => window.clearInterval(timer)
+  }, [])
 
   const totalAccounts = accounts.length
   const normalAccounts = accounts.filter((account) => account.status === 'active' || account.status === 'ready').length
@@ -814,8 +839,20 @@ export default function Accounts() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {pagedAccounts.map((account) => (
-                      <TableRow key={account.id} className={selected.has(account.id) ? 'bg-primary/5' : ''}>
+                    {pagedAccounts.map((account) => {
+                      const waitReasonKey = account.wait_reason || account.status || 'cooldown'
+                      const waitRemainingSeconds = (() => {
+                        if (account.wait_until) {
+                          const untilMs = new Date(account.wait_until).getTime()
+                          if (!Number.isNaN(untilMs)) {
+                            return Math.max(0, Math.floor((untilMs - nowMs) / 1000))
+                          }
+                        }
+                        return Math.max(0, Math.floor(account.wait_remaining_seconds ?? 0))
+                      })()
+
+                      return (
+                        <TableRow key={account.id} className={selected.has(account.id) ? 'bg-primary/5' : ''}>
                         <TableCell>
                           <input
                             type="checkbox"
@@ -848,6 +885,14 @@ export default function Accounts() {
                                 concurrency: account.dynamic_concurrency_limit ?? '-',
                               })}
                             </div>
+                            {account.wait_mode ? (
+                              <div className="text-[11px] text-amber-700">
+                                {t('accounts.waitingModeDetail', {
+                                  reason: t(`status.${waitReasonKey}`, { defaultValue: waitReasonKey }),
+                                  left: formatWaitRemaining(waitRemainingSeconds, t),
+                                })}
+                              </div>
+                            ) : null}
                           </div>
                         </TableCell>
                         <TableCell>
@@ -903,8 +948,9 @@ export default function Accounts() {
                             </Button>
                           </div>
                         </TableCell>
-                      </TableRow>
-                    ))}
+                        </TableRow>
+                      )
+                    })}
                   </TableBody>
                 </Table>
               </div>
