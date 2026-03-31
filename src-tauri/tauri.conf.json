@@ -1,0 +1,51 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Codex2API Desktop",
+  "version": "0.1.0",
+  "identifier": "com.codex2api.desktop",
+  "build": {
+    "frontendDist": "../desktop"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Codex2API Desktop",
+        "width": 1320,
+        "height": 900,
+        "minWidth": 1120,
+        "minHeight": 760,
+        "center": true,
+        "resizable": true,
+        "fullscreen": false,
+        "decorations": true
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "icon": [
+      "icons/icon.png",
+      "icons/icon.ico"
+    ],
+    "targets": [
+      "nsis",
+      "msi"
+    ],
+    "resources": [
+      "bin/codex2api.exe",
+      "resources/.env.sqlite.example"
+    ],
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser"
+      },
+      "wix": {
+        "language": "zh-CN"
+      }
+    }
+  }
+}

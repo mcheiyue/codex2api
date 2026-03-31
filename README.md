@@ -108,6 +108,7 @@ docker compose -f docker-compose.sqlite.local.yml logs -f codex2api
 | [配置文档](docs/CONFIGURATION.md) | 环境变量、系统设置、配置优先级 | `docs/CONFIGURATION.md` |
 | [架构文档](docs/ARCHITECTURE.md) | 系统架构、调度算法、存储设计 | `docs/ARCHITECTURE.md` |
 | [故障排查](docs/TROUBLESHOOTING.md) | 常见问题排查、诊断脚本、解决方案 | `docs/TROUBLESHOOTING.md` |
+| [Windows 桌面版](docs/DESKTOP_WINDOWS.md) | Tauri 桌面封装、托盘逻辑与 Windows 构建说明 | `docs/DESKTOP_WINDOWS.md` |
 | [贡献指南](docs/CONTRIBUTING.md) | 开发规范、PR 流程、代码标准 | `docs/CONTRIBUTING.md` |
 
 ---

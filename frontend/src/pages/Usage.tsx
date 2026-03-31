@@ -32,6 +32,10 @@ function formatTokens(value?: number | null): string {
   return value.toLocaleString()
 }
 
+function toFilterStreamValue(value: string): '' | 'true' | 'false' {
+  return value === 'true' || value === 'false' ? value : ''
+}
+
 function getStatusBadgeClassName(statusCode: number): string {
   if (statusCode === 200) {
     return 'border-transparent bg-emerald-500/14 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-300'
@@ -349,7 +353,7 @@ export default function Usage() {
                 className="w-32"
                 compact
                 value={filterStream}
-                onValueChange={(v) => { setFilterStream(v); setPage(1) }}
+                onValueChange={(v) => { setFilterStream(toFilterStreamValue(v)); setPage(1) }}
                 placeholder={t('usage.allTypes')}
                 options={[
                   { label: t('usage.allTypes'), value: '' },
