@@ -873,7 +873,19 @@ func (db *DB) GetUsageStats(ctx context.Context) (*UsageStats, error) {
 		COALESCE(SUM(cached_tokens), 0) AS today_cached,
 		COALESCE(SUM(CASE WHEN created_at >= $2 THEN 1 ELSE 0 END), 0) AS rpm,
 		COALESCE(SUM(CASE WHEN created_at >= $2 THEN total_tokens ELSE 0 END), 0) AS tpm,
-		COALESCE(AVG(duration_ms), 0) AS avg_duration_ms,
+		COALESCE(
+			AVG(
+				CASE
+					WHEN status_code < 400 THEN
+						CASE
+							WHEN COALESCE(first_token_ms, 0) > 0 THEN first_token_ms
+							ELSE duration_ms
+						END
+					ELSE NULL
+				END
+			),
+			0
+		) AS avg_duration_ms,
 		COALESCE(SUM(CASE WHEN status_code >= 400 THEN 1 ELSE 0 END), 0) AS today_errors
 	FROM usage_logs
 	WHERE created_at >= $1
@@ -1065,6 +1077,7 @@ func (db *DB) GetChartAggregation(ctx context.Context, start, end time.Time, buc
 	result := &ChartAggregation{}
 
 	// 时间轴聚合：按 bucketMinutes 分桶
+	// 平均延迟口径：优先首包延迟(first_token_ms)，无首包时回落 duration_ms，仅统计成功请求。
 	timelineQuery := `
 	SELECT
 		TO_CHAR(
@@ -1073,7 +1086,19 @@ func (db *DB) GetChartAggregation(ctx context.Context, start, end time.Time, buc
 			'YYYY-MM-DD"T"HH24:MI:SS'
 		) AS bucket,
 		COUNT(*)                              AS requests,
-		COALESCE(AVG(duration_ms), 0)         AS avg_latency,
+		COALESCE(
+			AVG(
+				CASE
+					WHEN status_code < 400 THEN
+						CASE
+							WHEN COALESCE(first_token_ms, 0) > 0 THEN first_token_ms
+							ELSE duration_ms
+						END
+					ELSE NULL
+				END
+			),
+			0
+		) AS avg_latency,
 		COALESCE(SUM(input_tokens), 0)        AS input_tokens,
 		COALESCE(SUM(output_tokens), 0)       AS output_tokens,
 		COALESCE(SUM(reasoning_tokens), 0)    AS reasoning_tokens,
