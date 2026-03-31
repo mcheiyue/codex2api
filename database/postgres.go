@@ -876,11 +876,7 @@ func (db *DB) GetUsageStats(ctx context.Context) (*UsageStats, error) {
 		COALESCE(
 			AVG(
 				CASE
-					WHEN status_code < 400 THEN
-						CASE
-							WHEN COALESCE(first_token_ms, 0) > 0 THEN first_token_ms
-							ELSE duration_ms
-						END
+					WHEN status_code < 400 AND COALESCE(first_token_ms, 0) > 0 THEN first_token_ms
 					ELSE NULL
 				END
 			),
@@ -1089,11 +1085,7 @@ func (db *DB) GetChartAggregation(ctx context.Context, start, end time.Time, buc
 		COALESCE(
 			AVG(
 				CASE
-					WHEN status_code < 400 THEN
-						CASE
-							WHEN COALESCE(first_token_ms, 0) > 0 THEN first_token_ms
-							ELSE duration_ms
-						END
+					WHEN status_code < 400 AND COALESCE(first_token_ms, 0) > 0 THEN first_token_ms
 					ELSE NULL
 				END
 			),

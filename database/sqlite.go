@@ -328,12 +328,8 @@ func (db *DB) getChartAggregationSQLite(ctx context.Context, start, end time.Tim
 			timelineMap[bucket] = agg
 		}
 		agg.requests++
-		if statusCode < 400 {
-			latencyMs := durationMs
-			if firstTokenMs > 0 {
-				latencyMs = firstTokenMs
-			}
-			agg.totalLatency += float64(latencyMs)
+		if statusCode < 400 && firstTokenMs > 0 {
+			agg.totalLatency += float64(firstTokenMs)
 			agg.latencySamples++
 		}
 		agg.inputTokens += inputTokens
