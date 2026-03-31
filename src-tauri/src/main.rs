@@ -1,3 +1,8 @@
+#![cfg_attr(
+    all(not(debug_assertions), target_os = "windows"),
+    windows_subsystem = "windows"
+)]
+
 use std::fs::{self, File, OpenOptions};
 use std::io::{Read, Write};
 use std::net::{TcpStream, ToSocketAddrs};
@@ -52,6 +57,8 @@ struct DesktopStatusPayload {
     runtime_dir: String,
     log_path: String,
     admin_url: String,
+    config_path: String,
+    db_path: String,
 }
 
 fn main() {
@@ -242,15 +249,13 @@ fn start_backend_monitor(window: WebviewWindow, backend: BackendState) {
             if health_check(&backend.admin_url) {
                 emit_status(
                     &window,
-                    "服务已就绪，即将进入管理后台",
-                    "桌面壳已经确认本地服务健康，正在打开内嵌管理台。",
+                    "服务已就绪",
+                    "本地服务已启动完成。配置文件、数据库、日志文件路径见下方。点击「进入管理后台」开始使用。",
                     "启动完成",
                     "服务已就绪",
                     "ready",
                     &backend,
                 );
-                thread::sleep(Duration::from_millis(500));
-                navigate_to_admin(&window, &backend.admin_url);
                 return;
             }
 
@@ -287,6 +292,8 @@ fn emit_status(
     level: &str,
     backend: &BackendState,
 ) {
+    let config_path = backend.runtime_dir.join(".env");
+    let db_path = backend.runtime_dir.join("codex2api.db");
     let payload = DesktopStatusPayload {
         title: title.to_string(),
         message: message.to_string(),
@@ -296,6 +303,8 @@ fn emit_status(
         runtime_dir: backend.runtime_dir.display().to_string(),
         log_path: backend.log_path.display().to_string(),
         admin_url: backend.admin_url.clone(),
+        config_path: config_path.display().to_string(),
+        db_path: db_path.display().to_string(),
     };
 
     if let Ok(payload_json) = serde_json::to_string(&payload) {

@@ -10,9 +10,9 @@
     <main class="shell">
       <section class="hero-card">
         <div class="badge">Windows 桌面版</div>
-        <h1>Codex2API 正在启动本地服务</h1>
+        <h1 id="main-title">Codex2API 正在启动本地服务</h1>
         <p id="summary" class="summary">
-          桌面壳会自动拉起 <code>codex2api.exe</code>，待健康检查通过后直接进入管理后台。
+          桌面壳会自动拉起 <code>codex2api.exe</code>，待健康检查通过后可进入管理后台。
         </p>
 
         <div class="status-board">
@@ -20,44 +20,44 @@
             <span class="dot"></span>
             <span id="status-label">准备启动</span>
           </div>
-          <div class="spinner" aria-hidden="true"></div>
+          <div class="spinner" id="spinner" aria-hidden="true"></div>
         </div>
 
-        <dl class="meta-grid">
+        <dl class="meta-grid" id="meta-grid">
           <div>
-            <dt>服务地址</dt>
-            <dd id="admin-url">http://127.0.0.1:8080/admin/</dd>
+            <dt>API 地址</dt>
+            <dd><code id="api-url">http://127.0.0.1:8080/v1/chat/completions</code></dd>
           </div>
           <div>
-            <dt>运行目录</dt>
-            <dd id="runtime-dir">等待初始化…</dd>
+            <dt>管理后台</dt>
+            <dd><code id="admin-url">http://127.0.0.1:8080/admin/</code></dd>
+          </div>
+          <div>
+            <dt>配置文件</dt>
+            <dd id="config-path">等待初始化…</dd>
+          </div>
+          <div>
+            <dt>数据库文件</dt>
+            <dd id="db-path">等待初始化…</dd>
           </div>
           <div>
             <dt>日志文件</dt>
             <dd id="log-path">等待初始化…</dd>
           </div>
-          <div>
-            <dt>当前阶段</dt>
-            <dd id="phase">初始化中</dd>
-          </div>
         </dl>
 
-        <div class="timeline" id="timeline">
-          <article class="timeline-item is-active">
-            <span class="timeline-step">1</span>
-            <div>
-              <strong>准备桌面运行环境</strong>
-              <p>自动生成 SQLite + 内存缓存的默认配置，并创建本地数据目录。</p>
-            </div>
-          </article>
+        <div class="action-bar" id="action-bar" style="display: none;">
+          <button id="enter-admin-btn" class="primary-btn">
+            进入管理后台
+          </button>
         </div>
 
         <footer class="hint-strip">
-          关闭窗口只会隐藏到系统托盘；请通过托盘菜单中的“退出”彻底关闭服务。
+          关闭窗口只会隐藏到系统托盘；请通过托盘菜单中的"退出"彻底关闭服务。
         </footer>
       </section>
     </main>
 
     <script src="./app.js"></script>
   </body>
-  </html>
+</html>
